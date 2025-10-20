@@ -8,6 +8,6 @@ app.get('/', (req, res) => {
 });
 
 app.listen(PORT, (err) => {
-  console.log('Server Started');
+  console.log(`Server Started on ${PORT}!!`);
   console.log(err);
 });
