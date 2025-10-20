@@ -7,6 +7,7 @@ app.get('/', (req, res) => {
   res.send('Hello Express');
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, (err) => {
   console.log('Server Started');
+  console.log(err);
 });
