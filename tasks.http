@@ -1,1 +1,27 @@
-GET http://localhost:3000/tasks?sort=oldest
+GET http://localhost:3000/tasks?sort=oldest&count=8
+
+###
+post http://localhost:3000/tasks
+Content-Type: application/json
+
+{
+    "title": "First Task",
+    "description": "This is the first task."
+ }
+    
+###
+
+GET http://localhost:3000/tasks/100
+    
+
+###
+
+PATCH http://localhost:3000/tasks/1
+Content-Type: application/json
+
+{
+    "title": "수정된 데이터 1"
+}
+
+###
+DELETE http://localhost:3000/tasks/100

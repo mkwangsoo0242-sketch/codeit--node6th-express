@@ -13,7 +13,7 @@ app.post('/tasks', (req, res) => {
   const now = new Date();
   const newTask = {
     ...data,
-    id: tasks.length + 1,
+    id: nextId,
     createdAt: now,
     updatedAt: now,
     isComplete: false,
@@ -69,9 +69,10 @@ app.patch('/tasks/:id', (req, res) => {
 
 app.delete('/tasks/:id', (req, res) => {
   const id = Number(req.params.id);
-  const task = tasks.find((task) => task.id === id);
-  if (task) {
-    res.send(task);
+  const taskIdx = tasks.findIndex((task) => task.id === id);
+  if (taskIdx !== -1) {
+    const deletedTask = tasks.splice(taskIdx, 1);
+    res.send(deletedTask);
   } else {
     res.status(404).send({ message: 'Cannot find given id.' });
   }
