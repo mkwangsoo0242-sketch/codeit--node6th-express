@@ -1,83 +1,64 @@
 import express from 'express';
-import tasks from './mock.js';
+import mongoose from 'mongoose';
+import Task from './task.js';
+import { DATABASE_URL } from './constants.js';
+import cors from 'cors';
 
-const PORT = 3000;
 const app = express();
+
 app.use(express.json());
 
-app.post('/tasks', (req, res) => {
-  const data = req.body;
+app.use(cors()); // 모든 Origin 대해 허용
+app.use(express.json());
 
-  const ids = tasks.map((task) => task.id);
-  const nextId = Math.max(...ids) + 1;
-  const now = new Date();
-  const newTask = {
-    ...data,
-    id: nextId,
-    createdAt: now,
-    updatedAt: now,
-    isComplete: false,
-  };
-  tasks.push(newTask);
+await mongoose.connect(DATABASE_URL);
 
-  res.status(201).send(newTask);
-});
-
-app.get('/tasks', (req, res) => {
-  /** 쿼리 파라미터
-   *  - sort: 'oldest'인 경우 오래된 태스크 기준, 나머지 경우 새로운 태스크 기준
-   *  - count: 태스크 개수
+app.get('/tasks', async (req, res) => {
+  /** 쿼리 목록
+   *  - count: 아이템 개수
+   *  - sort: 정렬
    */
-  const sort = req.query.sort;
-  const count = Number(req.query.count);
-
-  const compareFn = sort === 'oldest' ? (a, b) => a.createdAt - b.createdAt : (a, b) => b.createdAt - a.createdAt;
-
-  let newTasks = tasks.sort(compareFn);
-
-  if (count) {
-    newTasks = newTasks.slice(0, count);
-  }
-
-  res.send(newTasks);
+  const count = Number(req.query.count) || 0;
+  const sortOption = req.query.sort === 'oldest' ? ['createdAt', 'asc'] : ['createdAt', 'desc'];
+  const tasks = await Task.find().limit(count).sort([sortOption]);
+  res.send(tasks);
 });
 
-app.get('/tasks/:id', (req, res) => {
-  const id = Number(req.params.id);
-  const task = tasks.find((task) => task.id === id);
+app.get('/tasks/:id', async (req, res) => {
+  const task = await Task.findById(req.params.id);
   if (task) {
-    res.send(task);
-  } else {
-    res.status(404).send({ message: 'Cannot find given id.' });
-  }
-});
-
-app.patch('/tasks/:id', (req, res) => {
-  const id = Number(req.params.id);
-  const task = tasks.find((task) => task.id === id);
-
-  if (task) {
-    Object.keys(req.body).forEach((key) => {
-      task[key] = req.body[key];
-    });
-    task.updatedAt = new Date();
     res.send(task);
   } else {
     res.status(404).send({ message: '해당 id를 찾을 수 없습니다.' });
   }
 });
 
-app.delete('/tasks/:id', (req, res) => {
-  const id = Number(req.params.id);
-  const taskIdx = tasks.findIndex((task) => task.id === id);
-  if (taskIdx !== -1) {
-    const deletedTask = tasks.splice(taskIdx, 1);
-    res.send(deletedTask);
+app.post('/tasks', async (req, res) => {
+  const newTask = await Task.create(req.body);
+  res.send(newTask);
+});
+
+app.patch('/tasks/:id', async (req, res) => {
+  const task = await Task.findById(req.params.id);
+  if (task) {
+    const { body } = req;
+    Object.keys(body).forEach((key) => {
+      task[key] = body[key];
+    });
+    await task.save();
+    res.send(task);
   } else {
-    res.status(404).send({ message: 'Cannot find given id.' });
+    res.status(404).send({ message: '해당 id를 찾을 수 없습니다.' });
   }
 });
 
-app.listen(PORT, () => {
-  console.log('Server Started');
+app.delete('/tasks/:id', async (req, res) => {
+  const task = await Task.findByIdAndDelete(req.params.id);
+  if (task) {
+    res.sendStatus(200);
+  } else {
+    res.status(404).send({ message: '해당 id를 찾을 수 없습니다.' });
+  }
 });
+
+app.listen(process.env.PORT, () => console.log('Server Started'));
