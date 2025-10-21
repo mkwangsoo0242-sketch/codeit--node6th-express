@@ -6,6 +6,6 @@ import { DATABASE_URL } from './constants.js';
 await mongoose.connect(DATABASE_URL);
 
 await Task.deleteMany({});
-await Task.insertMany(data, { ordered: true });
+await Task.insertMany(data);
 
 await mongoose.connection.close();
